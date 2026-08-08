@@ -1,8 +1,9 @@
 """Extrator de questões do ENEM a partir de PDFs de prova."""
 
-from .service import detect_mode, default_output_dir, get_year_and_day
+from .service import extract, detect_mode, default_output_dir, get_year_and_day
 
 __all__ = [
+    "extract",
     "detect_mode",
     "default_output_dir",
     "get_year_and_day",

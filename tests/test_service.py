@@ -57,3 +57,67 @@ class PublicApiTests(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             enem_extractor.nao_existe
+
+
+import tempfile
+
+
+class ExtractValidationTests(unittest.TestCase):
+    def test_mode_invalido(self):
+        with self.assertRaises(ValueError):
+            service.extract("qualquer.pdf", mode="bogus")
+
+    def test_arquivo_inexistente(self):
+        with self.assertRaises(FileNotFoundError):
+            service.extract("nao_existe.pdf", mode="normal")
+
+
+class ExtractRoutingTests(unittest.TestCase):
+    def test_roteia_normal_e_retorna_metadados(self):
+        calls = {}
+
+        def fake(pdf_path, output_dir):
+            calls["pdf"] = pdf_path
+            calls["out"] = str(output_dir)
+            (Path(output_dir) / "questao_001.png").write_bytes(b"x")
+
+        with tempfile.TemporaryDirectory() as d:
+            pdf = Path(d) / "2023_PV_impresso_D1_CD4.pdf"
+            pdf.write_bytes(b"%PDF-1.4")
+            out = Path(d) / "out"
+            original = service._EXTRACTORS["normal"]
+            service._EXTRACTORS["normal"] = fake
+            try:
+                res = service.extract(str(pdf), output_dir=str(out), mode="auto")
+            finally:
+                service._EXTRACTORS["normal"] = original
+
+        self.assertEqual(res["mode"], "normal")
+        self.assertEqual(res["output_dir"], str(out))
+        self.assertEqual(res["images"], [str(out / "questao_001.png")])
+        self.assertEqual(calls["pdf"], str(pdf))
+
+    def test_auto_detecta_ampliada(self):
+        seen = {}
+
+        def fake(pdf_path, output_dir):
+            seen["called"] = True
+
+        with tempfile.TemporaryDirectory() as d:
+            pdf = Path(d) / "2025_PV_impresso_D1_CD9_ampliada.pdf"
+            pdf.write_bytes(b"%PDF-1.4")
+            out = Path(d) / "o"
+            original = service._EXTRACTORS["ampliada"]
+            service._EXTRACTORS["ampliada"] = fake
+            try:
+                res = service.extract(str(pdf), output_dir=str(out))
+            finally:
+                service._EXTRACTORS["ampliada"] = original
+
+        self.assertEqual(res["mode"], "ampliada")
+        self.assertTrue(seen.get("called"))
+
+    def test_expoe_extract_no_pacote(self):
+        import enem_extractor
+
+        self.assertIs(enem_extractor.extract, service.extract)
