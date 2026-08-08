@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "enem-extractor": {
+      "command": "uv",
+      "args": ["run", "--extra", "mcp", "enem-extractor-mcp"],
+      "env": {
+        "PROVAS_DIR": "provas"
+      }
+    }
+  }
+}

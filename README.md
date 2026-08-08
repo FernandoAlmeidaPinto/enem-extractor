@@ -74,17 +74,53 @@ result = extract(pdf_path, output_dir="/tmp/out", mode="normal")
 - `output_dir`: se omitido, deriva `imagens/<ano>/<dia>` do nome do arquivo.
 - Erros: `FileNotFoundError` se o PDF não existir; `ValueError` se `mode` for inválido.
 
+## Uso via MCP (Model Context Protocol)
+
+O projeto inclui um servidor MCP que expõe as provas e a extração para clientes
+como o Claude Code.
+
+Instale o extra opcional:
+
+```bash
+uv sync --extra mcp
+# ou, com pip:
+pip install -e ".[mcp]"
+```
+
+O arquivo `.mcp.json` (versionado) já registra o servidor `enem-extractor` via
+stdio. Ao abrir o projeto no Claude Code:
+
+- **`@`** lista as provas disponíveis como *resources* (`prova://<arquivo>.pdf`,
+  além do agregado `provas://list`).
+- **Tools** disponíveis para o agente:
+  - `list_provas()` — varre `PROVAS_DIR` ao vivo e devolve as provas com o modo
+    detectado.
+  - `extract_prova(name, mode="auto", output_dir=None)` — extrai a prova
+    (`name` é o arquivo listado ou um caminho) e devolve
+    `{pdf, mode, output_dir, images}`.
+
+A pasta das provas é configurável pela variável `PROVAS_DIR` (default `provas`).
+
+Notas:
+- `extract_prova` é **síncrona** — provas grandes (dezenas de páginas) bloqueiam
+  até concluir.
+- Provas novas na pasta aparecem no `@` **após reiniciar** o servidor; o tool
+  `list_provas` sempre enxerga a pasta ao vivo.
+
 ## Estrutura
 
 ```
 .
 ├── src/enem_extractor/
 │   ├── service.py     # entrada única: extract() detecta o tipo e roteia
+│   ├── catalog.py     # catálogo de provas (list/resolve) para o MCP
+│   ├── mcp_server.py  # servidor MCP (resources + tools)
 │   ├── main.py        # CLI: varre provas/ e chama o service
 │   ├── normal.py      # extração da prova padrão (layout de duas colunas)
 │   └── ampliada.py    # extração da prova ampliada (coluna única)
 ├── tests/             # testes (unittest, sem PyMuPDF/Pillow)
 ├── provas/            # coloque os PDFs aqui (ignorados no Git)
+├── .mcp.json          # registro do servidor MCP (Claude Code)
 ├── requirements.txt
 ├── pyproject.toml
 └── README.md
