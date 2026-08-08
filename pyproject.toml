@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "enem-extractor"
+version = "0.1.0"
+description = "Extrai questões do ENEM de PDFs de prova e salva cada questão como imagem PNG."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "PyMuPDF==1.26.0",
+    "Pillow==11.2.1",
+]
+
+[project.scripts]
+enem-extractor = "enem_extractor.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
