@@ -76,3 +76,16 @@ class ResolveProvaTests(unittest.TestCase):
         with TemporaryDirectory() as d:
             with self.assertRaises(FileNotFoundError):
                 catalog.resolve_prova("nao_existe.pdf", d)
+
+    def test_diretorio_tem_prioridade_sobre_cwd(self):
+        with TemporaryDirectory() as cwd, TemporaryDirectory() as provas:
+            nome = "2023_PV_impresso_D1_CD4.pdf"
+            (Path(cwd) / nome).write_bytes(b"CWD")
+            (Path(provas) / nome).write_bytes(b"PROVAS")
+            old = os.getcwd()
+            os.chdir(cwd)
+            try:
+                resolved = catalog.resolve_prova(nome, provas)
+            finally:
+                os.chdir(old)
+            self.assertEqual(resolved.read_bytes(), b"PROVAS")

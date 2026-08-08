@@ -27,7 +27,7 @@ def list_provas(directory=None) -> list[dict]:
             {
                 "name": pdf.name,
                 "mode": detect_mode(pdf.name),
-                "path": str(pdf),
+                "path": str(pdf.resolve()),
                 "size_bytes": pdf.stat().st_size,
             }
         )
@@ -36,16 +36,18 @@ def list_provas(directory=None) -> list[dict]:
 
 def resolve_prova(name, directory=None) -> Path:
     """Resolve `name` (arquivo listado, com ou sem `.pdf`, ou um caminho) para um
-    Path existente. Levanta FileNotFoundError se não encontrar."""
-    direct = Path(name)
-    if direct.is_file():
-        return direct
+    Path existente. A pasta (`directory`/PROVAS_DIR) tem prioridade sobre o CWD.
+    Levanta FileNotFoundError se não encontrar."""
     base = Path(directory) if directory is not None else provas_dir()
+    # `base / name` devolve o próprio `name` quando ele é um caminho absoluto.
     candidate = base / name
     if candidate.is_file():
         return candidate
-    if not str(name).endswith(".pdf"):
+    if Path(name).suffix.lower() != ".pdf":
         candidate_pdf = base / f"{name}.pdf"
         if candidate_pdf.is_file():
             return candidate_pdf
+    direct = Path(name)
+    if direct.is_file():
+        return direct
     raise FileNotFoundError(f"prova não encontrada: {name!r} (em {base})")
