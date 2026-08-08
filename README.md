@@ -79,9 +79,11 @@ result = extract(pdf_path, output_dir="/tmp/out", mode="normal")
 ```
 .
 ├── src/enem_extractor/
-│   ├── main.py        # ponto de entrada: varre provas/ e organiza a saída
+│   ├── service.py     # entrada única: extract() detecta o tipo e roteia
+│   ├── main.py        # CLI: varre provas/ e chama o service
 │   ├── normal.py      # extração da prova padrão (layout de duas colunas)
 │   └── ampliada.py    # extração da prova ampliada (coluna única)
+├── tests/             # testes (unittest, sem PyMuPDF/Pillow)
 ├── provas/            # coloque os PDFs aqui (ignorados no Git)
 ├── requirements.txt
 ├── pyproject.toml
