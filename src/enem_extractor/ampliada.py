@@ -3,12 +3,12 @@ from PIL import Image
 import io
 from pathlib import Path
 
-def extract_questions_ampliada(path):
-    # Abrir o PDF
-    pdf_path = path + ".pdf"
+def extract_questions_ampliada(path, output):
+    # Abrir o PDF (path já vem com .pdf)
+    pdf_path = path
     print(f"Opening PDF {pdf_path}")
     pdf_document = fitz.open(pdf_path)
-    Path(path).mkdir(parents=True, exist_ok=True)
+    Path(output).mkdir(parents=True, exist_ok=True)
     print(f"Extracting images to {pdf_path}")
 
     print(f"Total pages: {len(pdf_document)}")
@@ -31,7 +31,7 @@ def extract_questions_ampliada(path):
                 pix = page.get_pixmap(clip=question_area)
                 img = Image.open(io.BytesIO(pix.tobytes()))
                 # Salvar a imagem
-                image_path = f"{path}/page_{page_num + 1}_question_{instance_num + 1}.png"
+                image_path = f"{output}/page_{page_num + 1}_question_{instance_num + 1}.png"
                 print(f"Saving image to {image_path}")
                 img.save(image_path)
                 print(f"Saved image {image_path}")
@@ -40,4 +40,7 @@ def extract_questions_ampliada(path):
 
 
 if __name__ == "__main__":
-    extract_questions_ampliada("2016_PV_impresso_D1_CD1")
+    extract_questions_ampliada(
+        "provas/2025_PV_impresso_D1_CD9_ampliada.pdf",
+        "imagens/2025/D1",
+    )
