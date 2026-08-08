@@ -87,8 +87,22 @@ uv sync --extra mcp
 pip install -e ".[mcp]"
 ```
 
-O arquivo `.mcp.json` (versionado) já registra o servidor `enem-extractor` via
-stdio. Ao abrir o projeto no Claude Code:
+O servidor é iniciado pelo console script `enem-extractor-mcp` (via stdio). O
+arquivo `.mcp.json` (versionado) já o registra para o Claude Code:
+
+```json
+{
+  "mcpServers": {
+    "enem-extractor": {
+      "command": "uv",
+      "args": ["run", "--extra", "mcp", "enem-extractor-mcp"],
+      "env": { "PROVAS_DIR": "provas" }
+    }
+  }
+}
+```
+
+Ao abrir o projeto no Claude Code:
 
 - **`@`** lista as provas disponíveis como *resources* (`prova://<arquivo>.pdf`,
   além do agregado `provas://list`).
