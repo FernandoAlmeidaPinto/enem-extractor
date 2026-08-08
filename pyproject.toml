@@ -14,8 +14,12 @@ dependencies = [
     "Pillow==11.2.1",
 ]
 
+[project.optional-dependencies]
+mcp = ["mcp>=2.0"]
+
 [project.scripts]
 enem-extractor = "enem_extractor.main:main"
+enem-extractor-mcp = "enem_extractor.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
