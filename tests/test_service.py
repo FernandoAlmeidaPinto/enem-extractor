@@ -1,3 +1,4 @@
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -59,9 +60,6 @@ class PublicApiTests(unittest.TestCase):
             enem_extractor.nao_existe
 
 
-import tempfile
-
-
 class ExtractValidationTests(unittest.TestCase):
     def test_mode_invalido(self):
         with self.assertRaises(ValueError):
@@ -115,6 +113,26 @@ class ExtractRoutingTests(unittest.TestCase):
                 service._EXTRACTORS["ampliada"] = original
 
         self.assertEqual(res["mode"], "ampliada")
+        self.assertTrue(seen.get("called"))
+
+    def test_forca_modo_normal(self):
+        seen = {}
+
+        def fake(pdf_path, output_dir):
+            seen["called"] = True
+
+        with tempfile.TemporaryDirectory() as d:
+            pdf = Path(d) / "2023_PV_impresso_D1_CD4.pdf"
+            pdf.write_bytes(b"%PDF-1.4")
+            out = Path(d) / "out"
+            original = service._EXTRACTORS["normal"]
+            service._EXTRACTORS["normal"] = fake
+            try:
+                res = service.extract(str(pdf), output_dir=str(out), mode="normal")
+            finally:
+                service._EXTRACTORS["normal"] = original
+
+        self.assertEqual(res["mode"], "normal")
         self.assertTrue(seen.get("called"))
 
     def test_expoe_extract_no_pacote(self):

@@ -53,6 +53,11 @@ def extract(pdf_path, output_dir=None, mode="auto") -> dict:
     - resolve a pasta de saída (imagens/<ano>/<dia> se `output_dir` é None)
     - roteia para o extractor correto
     - retorna metadados do job
+
+    Nota: `images` lista todos os PNGs em `output_dir` após a extração; se a
+    pasta for reutilizada, pode incluir imagens de execuções anteriores. Para
+    resultados limpos, use uma pasta de saída vazia (o padrão derivado já é
+    por ano/dia).
     """
     if mode not in VALID_MODES:
         raise ValueError(f"mode inválido: {mode!r}. Use um de {VALID_MODES}.")
