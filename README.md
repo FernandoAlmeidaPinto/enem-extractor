@@ -48,6 +48,32 @@ imagens/<ano>/<dia>/questao_NNN.png
 > No dia 2 (`D2`) a numeração das questões continua a partir de 91, seguindo a
 > convenção do ENEM.
 
+## Uso como serviço / worker
+
+O pacote expõe uma entrada única `extract`, ideal para ser chamada por um worker:
+
+```python
+from enem_extractor import extract
+
+# auto-detecção do tipo pelo nome do arquivo
+result = extract("provas/2025_PV_impresso_D1_CD9_ampliada.pdf")
+
+# forçando modo e pasta de saída
+result = extract(pdf_path, output_dir="/tmp/out", mode="normal")
+
+# result == {
+#     "pdf": "...",
+#     "mode": "ampliada",          # 'normal' | 'ampliada'
+#     "output_dir": "imagens/2025/D1",
+#     "images": ["imagens/2025/D1/page_1_question_1.png", ...],
+# }
+```
+
+- `mode`: `"auto"` (padrão) detecta pelo nome (`ampliada`/`superampliada` → extractor
+  ampliada; caso contrário normal). Use `"normal"` ou `"ampliada"` para forçar.
+- `output_dir`: se omitido, deriva `imagens/<ano>/<dia>` do nome do arquivo.
+- Erros: `FileNotFoundError` se o PDF não existir; `ValueError` se `mode` for inválido.
+
 ## Estrutura
 
 ```
