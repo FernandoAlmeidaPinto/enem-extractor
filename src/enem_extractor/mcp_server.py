@@ -12,6 +12,9 @@ Requer o extra opcional `mcp` (`pip install ".[mcp]"` ou `uv sync --extra mcp`).
 import json
 
 from mcp.server import MCPServer
+
+# `FunctionResource` não tem alias público estável no SDK; este caminho interno
+# é válido para mcp 2.x (pinado em pyproject). Reavaliar em upgrades de major.
 from mcp.server.mcpserver.resources import FunctionResource
 
 from . import catalog, service

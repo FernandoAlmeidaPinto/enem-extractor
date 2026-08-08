@@ -8,7 +8,9 @@ try:
     from enem_extractor import mcp_server
 
     _HAS_MCP = True
-except Exception:
+except ImportError:
+    # Só suprime quando o `mcp` não está instalado. Erros reais no módulo
+    # (SyntaxError etc.) propagam e falham os testes em vez de serem pulados.
     _HAS_MCP = False
 
 
@@ -17,6 +19,13 @@ class McpServerTests(unittest.TestCase):
     def test_build_server_ok(self):
         srv = mcp_server.build_server()
         self.assertEqual(srv.name, "enem-extractor")
+
+    def test_make_reader_captura_payload_isolado(self):
+        # Guarda contra regressão de late-binding se alguém trocar por lambda.
+        self.assertEqual(mcp_server._make_reader("a")(), "a")
+        self.assertNotEqual(
+            mcp_server._make_reader("a")(), mcp_server._make_reader("b")()
+        )
 
     def test_resource_specs_inclui_provas_e_agregado(self):
         with TemporaryDirectory() as d:
