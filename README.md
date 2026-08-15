@@ -13,6 +13,21 @@ por coordenadas na página e [Pillow](https://python-pillow.org/) para gerar as 
 
 ## Instalação
 
+### Instalação rápida (recomendada)
+
+Um único comando prepara tudo com [uv](https://docs.astral.sh/uv/): ele baixa um
+Python 3.10+ isolado (sem mexer no Python do sistema — ideal para Ubuntu antigo),
+cria o `.venv` e instala as dependências. Não precisa de Docker nem de rebuild a
+cada alteração.
+
+```bash
+git clone <repo> && cd ExtractImagemEnem
+./setup.sh
+uv run enem-extractor
+```
+
+### Instalação manual
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
