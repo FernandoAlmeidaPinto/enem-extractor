@@ -57,6 +57,16 @@ pip install -e .
    python -m enem_extractor.main
    ```
 
+   Por padrão o modo é **auto-detectado** pelo nome de cada arquivo (arquivos com
+   `ampliada`/`superampliada` no nome usam o extractor ampliado; os demais, o
+   normal). Use `--mode` para **forçar** o mesmo modo em todos os PDFs de `provas/`:
+
+   ```bash
+   uv run enem-extractor                  # auto-detecta por arquivo (padrão)
+   uv run enem-extractor --mode ampliada  # força ampliada em todos de provas/
+   uv run enem-extractor --mode normal    # força normal em todos de provas/
+   ```
+
 As imagens são salvas em:
 
 ```
