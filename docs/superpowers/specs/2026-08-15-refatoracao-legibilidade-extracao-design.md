@@ -86,9 +86,9 @@ comportamento sejam preservados.)
 Extrair unidades pequenas com responsabilidade única, sem alterar a aritmética:
 - `find_last_alternative_bottom(page, clip)` — localiza a alternativa "E" mais
   baixa e devolve a base do recorte.
-- `compute_question_rect(...)` — calcula o retângulo de uma questão (coluna
-  dupla, última da página).
-- `render_question_image(rect, page, output, number)` — renderiza com zoom e
+- `crop_questions_on_page(questions, column_divider_x, page, output)` — calcula
+  o retângulo de cada questão (coluna dupla, última da página) e delega o render.
+- `render_question_image(box, page, output, number)` — renderiza com zoom e
   salva o PNG.
 - Decomposição análoga (mais enxuta) em `ampliada.py`.
 
