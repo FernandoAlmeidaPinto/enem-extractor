@@ -12,7 +12,9 @@ Para regenerar o manifesto a partir do código atual:
     uv run python tests/test_golden.py update
 """
 
+import contextlib
 import hashlib
+import io
 import json
 import sys
 import tempfile
@@ -50,7 +52,9 @@ def _hash_extraction(sample):
     from enem_extractor.service import extract
 
     with tempfile.TemporaryDirectory() as out_dir:
-        extract(str(PROJECT_ROOT / sample["pdf"]), output_dir=out_dir, mode=sample["mode"])
+        # Os extractors imprimem no stdout; silencia para não poluir os testes.
+        with contextlib.redirect_stdout(io.StringIO()):
+            extract(str(PROJECT_ROOT / sample["pdf"]), output_dir=out_dir, mode=sample["mode"])
         return {
             png.name: hashlib.sha256(png.read_bytes()).hexdigest()
             for png in sorted(Path(out_dir).glob("*.png"))
