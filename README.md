@@ -151,3 +151,32 @@ Notas:
 ## Licença
 
 MIT — veja [LICENSE](LICENSE).
+
+## Uso com Docker
+
+Instruções rápidas para rodar o extrator em um container usando Docker Compose.
+
+- Construir e subir o serviço (monta o diretório atual em `/app`):
+
+```bash
+docker compose up --build
+```
+
+- Ou apenas construir e executar manualmente:
+
+```bash
+docker build -t enem-extractor .
+docker run --rm -v "$PWD/provas":/app/provas enem-extractor
+```
+
+Observações:
+- O container define `PYTHONPATH=/app/src` para executar o módulo `enem_extractor.main`.
+- Monte a pasta `provas/` com seus PDFs (o `docker compose` já monta o projeto inteiro).
+- Para rodar o servidor MCP (opcional), instale as dependências extras e altere o `command` no
+  `docker-compose.yml` para `python -m enem_extractor.mcp_server` ou use o console script
+  `enem-extractor-mcp` se preferir.
+
+#### Para rodar no bash, estando na pasta do script, rode: 
+```
+docker compose up --build --abort-on-container-exit --remove-orphans
+```

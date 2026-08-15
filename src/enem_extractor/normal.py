@@ -33,7 +33,10 @@ def get_num_of_question_in_page(initial_num, page):
     x0_values = set()
 
     while True:
+        # Tenta com zero à esquerda (01) e sem (1), pois PDFs variam
         question = page.search_for(f"QUESTÃO {i:02}")
+        if len(question) == 0:
+            question = page.search_for(f"QUESTÃO {i}")
         if len(question) == 0:
             break
         rect = question[0]
@@ -59,9 +62,9 @@ def denife_rect(dict_rect_questions, division_x, page, output):
         key = keys[pos]
         current_rect = dict_rect_questions[key]
         x0 = current_rect.x0 - 5
-        y0 = current_rect.y0 - 5
+        y0 = current_rect.y0 + 25
         x1 = page_width - 30
-        y1 = page_height
+        y1 = page_height + 0
         # Se for a última questão da página
         if pos == len(keys) - 1:
             alternatives = page.search_for("E", quads=False, clip=(x0, y0, x1, page.rect.y1))
