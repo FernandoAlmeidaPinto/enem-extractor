@@ -1,3 +1,5 @@
+import contextlib
+import io
 import os
 import tempfile
 import unittest
@@ -13,8 +15,10 @@ class MainModeArgTests(unittest.TestCase):
     def _run_in_provas_dir(self, argv, pdf_names, fake_extract):
         """
         Helper: create a temp dir with a provas/ subdir containing the given
-        pdf_names (empty files), chdir into it, run main(argv) with a monkeypatched
-        extract, then chdir back. Returns the list of recorded calls.
+        pdf_names (empty files), monkeypatch main_module.extract with fake_extract,
+        chdir into the temp dir, run main(argv), then restore CWD and the original
+        extract in a finally block. Returns nothing — callers capture results via
+        closure variables defined in the fake_extract they pass in.
         """
         original_extract = main_module.extract
         main_module.extract = fake_extract
@@ -35,7 +39,7 @@ class MainModeArgTests(unittest.TestCase):
         """--mode ampliada forces mode="ampliada" for every PDF."""
         recorded = []
 
-        def fake_extract(pdf_path, mode="auto"):
+        def fake_extract(pdf_path, output_dir=None, mode="auto"):
             recorded.append({"pdf": pdf_path, "mode": mode})
             return {
                 "pdf": pdf_path,
@@ -58,7 +62,7 @@ class MainModeArgTests(unittest.TestCase):
         """--mode normal forces mode="normal" for every PDF."""
         recorded = []
 
-        def fake_extract(pdf_path, mode="auto"):
+        def fake_extract(pdf_path, output_dir=None, mode="auto"):
             recorded.append({"pdf": pdf_path, "mode": mode})
             return {
                 "pdf": pdf_path,
@@ -80,7 +84,7 @@ class MainModeArgTests(unittest.TestCase):
         """No --mode argument defaults to mode="auto"."""
         recorded = []
 
-        def fake_extract(pdf_path, mode="auto"):
+        def fake_extract(pdf_path, output_dir=None, mode="auto"):
             recorded.append({"pdf": pdf_path, "mode": mode})
             return {
                 "pdf": pdf_path,
@@ -99,15 +103,17 @@ class MainModeArgTests(unittest.TestCase):
         self.assertEqual(recorded[0]["mode"], "auto")
 
     def test_invalid_mode_raises_system_exit(self):
-        """--mode bogus should cause argparse to raise SystemExit."""
-        with self.assertRaises(SystemExit):
-            main(["--mode", "bogus"])
+        """--mode bogus should cause argparse to raise SystemExit with code 2."""
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as ctx:
+                main(["--mode", "bogus"])
+        self.assertEqual(ctx.exception.code, 2)
 
     def test_empty_provas_dir_zero_calls(self):
         """An empty provas/ dir results in zero extract calls (no crash)."""
         recorded = []
 
-        def fake_extract(pdf_path, mode="auto"):
+        def fake_extract(pdf_path, output_dir=None, mode="auto"):
             recorded.append(pdf_path)
             return {
                 "pdf": pdf_path,
