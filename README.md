@@ -13,6 +13,21 @@ por coordenadas na página e [Pillow](https://python-pillow.org/) para gerar as 
 
 ## Instalação
 
+### Instalação rápida (recomendada)
+
+Um único comando prepara tudo com [uv](https://docs.astral.sh/uv/): ele baixa um
+Python 3.10+ isolado (sem mexer no Python do sistema — ideal para Ubuntu antigo),
+cria o `.venv` e instala as dependências. Não precisa de Docker nem de rebuild a
+cada alteração.
+
+```bash
+git clone <repo> && cd ExtractImagemEnem
+./setup.sh
+uv run enem-extractor
+```
+
+### Instalação manual
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
@@ -34,9 +49,22 @@ pip install -e .
 3. Rode o extrator a partir da raiz do projeto:
 
    ```bash
-   python -m enem_extractor.main
-   # ou, se instalado com `pip install -e .`:
+   # instalação rápida (uv): usa o Python do .venv automaticamente
+   uv run enem-extractor
+   # instalação manual (venv ativo com `pip install -e .`):
    enem-extractor
+   # ou, direto pelo módulo:
+   python -m enem_extractor.main
+   ```
+
+   Por padrão o modo é **auto-detectado** pelo nome de cada arquivo (arquivos com
+   `ampliada`/`superampliada` no nome usam o extractor ampliado; os demais, o
+   normal). Use `--mode` para **forçar** o mesmo modo em todos os PDFs de `provas/`:
+
+   ```bash
+   uv run enem-extractor                  # auto-detecta por arquivo (padrão)
+   uv run enem-extractor --mode ampliada  # força ampliada em todos de provas/
+   uv run enem-extractor --mode normal    # força normal em todos de provas/
    ```
 
 As imagens são salvas em:
