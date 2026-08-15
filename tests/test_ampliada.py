@@ -5,6 +5,7 @@ um objeto `page` falso (com get_text("words")). O render é lazy-import e não �
 exercitado aqui.
 """
 
+import unicodedata
 import unittest
 from collections import Counter
 
@@ -62,6 +63,18 @@ class FindQuestionHeadingsTests(unittest.TestCase):
     def test_aceita_sem_acento(self):
         page = FakePage([_word("Questao", y0=100), _word("06", y0=100)])
         self.assertEqual(find_question_headings(page), [(6, 100.0)])
+
+    def test_aceita_acento_decomposto_nfd(self):
+        # "Questão" na forma decomposta (NFD: a + U+0303) deve casar apos normalizar.
+        nfd = unicodedata.normalize("NFD", "Questão")
+        page = FakePage([_word(nfd, y0=100), _word("06", y0=100)])
+        self.assertEqual(find_question_headings(page), [(6, 100.0)])
+
+    def test_ignora_numero_em_outra_linha(self):
+        # Numero logo apos "Questão" na lista de words, mas em outra linha
+        # (y0 distante), nao deve ser tratado como heading.
+        page = FakePage([_word("Questão", y0=100), _word("06", y0=500)])
+        self.assertEqual(find_question_headings(page), [])
 
 
 class ComputeQuestionBoxesTests(unittest.TestCase):

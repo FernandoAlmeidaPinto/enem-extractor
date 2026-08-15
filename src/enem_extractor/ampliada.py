@@ -25,31 +25,36 @@ FOOTER_MARGIN = 30
 SIDE_MARGIN = 10
 # Fator de zoom na renderização (2x = maior definição).
 ZOOM = 2
+# Tolerância vertical (pontos) para o número ser considerado na mesma linha do
+# "Questão" — evita casar "Questão" com um número de outro bloco da página.
+SAME_LINE_TOLERANCE = 3
 
 # Um heading é a palavra "Questão" seguida do número da questão (2–3 dígitos).
-_QUESTION_WORD = ("questão", "questao")
+_QUESTION_WORD_FORMS = ("questão", "questao")
 _NUMBER_RE = re.compile(r"^\d{2,3}$")
 
 
 def _is_question_word(text):
     normalized = unicodedata.normalize("NFC", text).strip().lower()
-    return normalized in _QUESTION_WORD
+    return normalized in _QUESTION_WORD_FORMS
 
 
 def find_question_headings(page):
     """Localiza os headings "Questão NN" da página via get_text("words").
 
     Retorna [(numero:int, top_y:float)] — o y0 da palavra "Questão". Ignora
-    ocorrências de "Questão" não seguidas de número (ex.: no corpo do texto) e o
-    plural "Questões"."""
+    ocorrências de "Questão" não seguidas de número (ex.: no corpo do texto), o
+    plural "Questões", e casos em que o número seguinte está em outra linha
+    (outro bloco da página) — exige mesma linha dentro de SAME_LINE_TOLERANCE."""
     words = page.get_text("words")  # (x0, y0, x1, y1, text, block, line, word_no)
     headings = []
     for idx, word in enumerate(words):
         text = word[4]
         if _is_question_word(text) and idx + 1 < len(words):
-            next_text = words[idx + 1][4]
-            if _NUMBER_RE.match(next_text):
-                headings.append((int(next_text), word[1]))
+            next_word = words[idx + 1]
+            same_line = abs(next_word[1] - word[1]) <= SAME_LINE_TOLERANCE
+            if same_line and _NUMBER_RE.match(next_word[4]):
+                headings.append((int(next_word[4]), word[1]))
     return headings
 
 
