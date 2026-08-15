@@ -30,7 +30,8 @@ class MainModeArgTests(unittest.TestCase):
                 for name in pdf_names:
                     (provas / name).write_bytes(b"%PDF-1.4")
                 os.chdir(tmp)
-                main(argv)
+                with contextlib.redirect_stdout(io.StringIO()):
+                    main(argv)
         finally:
             os.chdir(original_cwd)
             main_module.extract = original_extract
