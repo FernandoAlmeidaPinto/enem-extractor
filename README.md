@@ -49,9 +49,12 @@ pip install -e .
 3. Rode o extrator a partir da raiz do projeto:
 
    ```bash
-   python -m enem_extractor.main
-   # ou, se instalado com `pip install -e .`:
+   # instalação rápida (uv): usa o Python do .venv automaticamente
+   uv run enem-extractor
+   # instalação manual (venv ativo com `pip install -e .`):
    enem-extractor
+   # ou, direto pelo módulo:
+   python -m enem_extractor.main
    ```
 
 As imagens são salvas em:
