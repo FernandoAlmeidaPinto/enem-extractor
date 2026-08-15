@@ -313,7 +313,17 @@ git commit -m "refactor(normal): nomes left/top/right/bottom, constantes e funç
 
 ---
 
-### Task 3: Refatorar `ampliada.py`
+### Task 3 (ADIADA): Refatorar `ampliada.py`
+
+> **ADIADA para um PR separado.** Durante a Task 1 descobriu-se que a
+> `ampliada.py` está **quebrada**: procura por `"QUESTÃO"` (maiúsculo), mas a
+> prova ampliada usa `"Questão NN"` (uma questão por página), então gera **0
+> imagens** nas provas reais. Além disso o loop só cobre `range(2)` páginas.
+> Como não há saída a preservar, o golden test não protege este caminho e uma
+> "refatoração sem quebrar" seria vazia. A correção (busca por `Questão NN`, uma
+> por página, iterar todas as páginas) é uma **mudança de comportamento** e terá
+> seu próprio design/spec/plano. O código-alvo abaixo fica como referência para
+> a parte de legibilidade desse futuro trabalho.
 
 Mesma abordagem para o extractor da versão ampliada (coluna única). API pública (`extract_questions_ampliada(path, output)`) e aritmética preservadas.
 
