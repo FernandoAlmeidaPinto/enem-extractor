@@ -6,7 +6,6 @@ eixo y cresce para baixo. Um Rect é (left, top, right, bottom) — equivalente 
 """
 
 import io
-from pathlib import Path  # noqa: F401  (mantido: paridade com o módulo original)
 
 import fitz  # PyMuPDF
 from PIL import Image
@@ -71,7 +70,10 @@ def find_questions_on_page(initial_num, page):
 
 def find_last_alternative_bottom(page, clip):
     """Procura a alternativa "E" mais baixa dentro de `clip` e devolve a base do
-    recorte (y da última "E" + BOTTOM_PADDING)."""
+    recorte (y da última "E" + BOTTOM_PADDING).
+
+    Precondição: `clip` deve conter ao menos uma "E" — o chamador garante isso
+    (senão levanta IndexError, comportamento herdado do código original)."""
     alternatives = page.search_for("E", quads=False, clip=clip)
     last_alternative = alternatives[-1]  # a "E" mais abaixo encerra a questão
     return last_alternative.y1 + BOTTOM_PADDING
@@ -81,7 +83,8 @@ def crop_questions_on_page(questions, column_divider_x, page, output):
     page_bottom = page.rect.y1
     page_right = page.rect.x1
     keys = list(questions.keys())
-    first_left = questions[keys[0]].x0
+    # x0 de referência da coluna da esquerda (a primeira questão da página).
+    left_column_x = questions[keys[0]].x0
 
     for pos in range(len(keys)):
         key = keys[pos]
@@ -100,7 +103,7 @@ def crop_questions_on_page(questions, column_divider_x, page, output):
         else:
             next_rect = questions[keys[pos + 1]]
             # Questão na coluna da esquerda: limita a direita ao divisor.
-            if column_divider_x and abs(current_rect.x0 - first_left) < COLUMN_TOLERANCE:
+            if column_divider_x and abs(current_rect.x0 - left_column_x) < COLUMN_TOLERANCE:
                 right = column_divider_x
             if abs(current_rect.x0 - next_rect.x0) < COLUMN_TOLERANCE:
                 # Próxima questão na mesma coluna: a base é o topo dela.
