@@ -64,12 +64,12 @@ def denife_rect(dict_rect_questions, division_x, page, output):
         x0 = current_rect.x0 - 5
         y0 = current_rect.y0 + 25
         x1 = page_width - 30
-        y1 = page_height + 0
+        y1 = page_height + 8
         # Se for a última questão da página
         if pos == len(keys) - 1:
             alternatives = page.search_for("E", quads=False, clip=(x0, y0, x1, page.rect.y1))
             alternative = alternatives[-1]  # Posição da última alternativa "E"
-            y1 = alternative.y1 + 10  # fim da página, pois a próxima está em outra coluna
+            y1 = alternative.y1 + 18  # fim da página, pois a próxima está em outra coluna
         else:
             next_rect = dict_rect_questions[keys[pos + 1]]
             # Se estiver na mesma coluna (diferença pequena no x0)
@@ -80,7 +80,7 @@ def denife_rect(dict_rect_questions, division_x, page, output):
             else:
                 alternatives = page.search_for("E", quads=False, clip=(x0, y0, x1, page.rect.y1))
                 alternative = alternatives[-1]  # Posição da última alternativa "E"
-                y1 = alternative.y1 + 10  # fim da página, pois a próxima está em outra coluna
+                y1 = alternative.y1  # fim da página, pois a próxima está em outra coluna
         cut_image(x0, y0, x1, y1, output, int(key), page)
 
 
