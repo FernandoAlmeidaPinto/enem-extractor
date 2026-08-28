@@ -18,7 +18,7 @@ from collections import Counter
 from pathlib import Path
 
 # Recuo acima do heading "Questão NN" ao definir o topo do recorte (pontos PDF).
-HEADING_TOP_PADDING = 5
+HEADING_TOP_PADDING = -25
 # Margem removida da base da página na última questão (evita o rodapé).
 FOOTER_MARGIN = 30
 # Margem lateral do recorte (coluna única).
@@ -29,9 +29,11 @@ ZOOM = 2
 # "Questão" — evita casar "Questão" com um número de outro bloco da página.
 SAME_LINE_TOLERANCE = 3
 
-# Um heading é a palavra "Questão" seguida do número da questão (2–3 dígitos).
+# Um heading é a palavra "Questão" seguida do número da questão (1–3 dígitos).
+# Isso cobre as duplicatas de 1–5 em inglês/espanhol, que aparecem em ambas as
+# versões do exame com o mesmo número de questão.
 _QUESTION_WORD_FORMS = ("questão", "questao")
-_NUMBER_RE = re.compile(r"^\d{2,3}$")
+_NUMBER_RE = re.compile(r"^\d{1,3}$")
 
 
 def _is_question_word(text):

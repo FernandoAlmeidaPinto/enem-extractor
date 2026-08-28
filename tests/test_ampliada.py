@@ -64,6 +64,10 @@ class FindQuestionHeadingsTests(unittest.TestCase):
         page = FakePage([_word("Questao", y0=100), _word("06", y0=100)])
         self.assertEqual(find_question_headings(page), [(6, 100.0)])
 
+    def test_aceita_numero_com_1_digito(self):
+        page = FakePage([_word("Questão", y0=100), _word("5", y0=100)])
+        self.assertEqual(find_question_headings(page), [(5, 100.0)])
+
     def test_aceita_acento_decomposto_nfd(self):
         # "Questão" na forma decomposta (NFD: a + U+0303) deve casar apos normalizar.
         nfd = unicodedata.normalize("NFD", "Questão")
@@ -118,6 +122,25 @@ class QuestionFilenameTests(unittest.TestCase):
         seen = Counter()
         question_filename(1, seen)
         self.assertEqual(question_filename(1, seen), "questao_001_2.png")
+
+    def test_duplicatas_em_questoes_1_a_5_ficam_diferenciadas(self):
+        seen = Counter()
+        names = [question_filename(n, seen) for n in [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]]
+        self.assertEqual(
+            names,
+            [
+                "questao_001.png",
+                "questao_001_2.png",
+                "questao_002.png",
+                "questao_002_2.png",
+                "questao_003.png",
+                "questao_003_2.png",
+                "questao_004.png",
+                "questao_004_2.png",
+                "questao_005.png",
+                "questao_005_2.png",
+            ],
+        )
 
     def test_numeros_diferentes_sem_sufixo(self):
         seen = Counter()
