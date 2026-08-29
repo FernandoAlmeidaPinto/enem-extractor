@@ -52,9 +52,13 @@ def find_questions_on_page(initial_num, page):
     left_edges = set()
 
     while True:
+        # Tenta com zero à esquerda (01) e sem (1), pois PDFs variam.
         found = page.search_for(f"QUESTÃO {i:02}")
         if len(found) == 0:
+            found = page.search_for(f"QUESTÃO {i}")
+        if len(found) == 0:
             break
+
         rect = found[0]
         questions[f"{i:03}"] = rect
         left_edges.add(int(rect.x0))  # arredonda para evitar variações pequenas

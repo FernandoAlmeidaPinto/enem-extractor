@@ -30,6 +30,25 @@ class FakePage:
         return self._words
 
 
+class FakePageWithAlternatives:
+    """Simula uma página com buscas por "E" no recorte da questão."""
+
+    def __init__(self):
+        self.rect = type("Rect", (), {"width": 800, "height": 1000})()
+
+    def search_for(self, text, quads=False, clip=None):
+        assert text == "E"
+        assert quads is False
+        if clip is None:
+            return []
+        left, top, right, bottom = clip
+        # Simula uma última alternativa E em y1=350, dentro do recorte da última
+        # questão e antes do rodapé final da página.
+        if left == SIDE_MARGIN and top == 300.0 - HEADING_TOP_PADDING:
+            return [type("Alt", (), {"y1": 350.0})()]
+        return []
+
+
 def _word(text, x0=0.0, y0=0.0):
     # (x0, y0, x1, y1, text, block, line, word_no)
     return (x0, y0, x0 + 10, y0 + 12, text, 0, 0, 0)
@@ -63,6 +82,10 @@ class FindQuestionHeadingsTests(unittest.TestCase):
     def test_aceita_sem_acento(self):
         page = FakePage([_word("Questao", y0=100), _word("06", y0=100)])
         self.assertEqual(find_question_headings(page), [(6, 100.0)])
+
+    def test_aceita_numero_com_1_digito(self):
+        page = FakePage([_word("Questão", y0=100), _word("5", y0=100)])
+        self.assertEqual(find_question_headings(page), [(5, 100.0)])
 
     def test_aceita_acento_decomposto_nfd(self):
         # "Questão" na forma decomposta (NFD: a + U+0303) deve casar apos normalizar.
@@ -109,6 +132,11 @@ class ComputeQuestionBoxesTests(unittest.TestCase):
         self.assertEqual(len(boxes), 1)
         self.assertEqual(boxes[0][1][3], 1000 - FOOTER_MARGIN)
 
+    def test_ultima_alternativa_e_limita_o_recorte(self):
+        page = FakePageWithAlternatives()
+        boxes = compute_question_boxes([(6, 100.0), (7, 300.0)], 800, 1000, page=page)
+        self.assertEqual(boxes[1][1][3], 350.0 + 10)
+
 
 class QuestionFilenameTests(unittest.TestCase):
     def test_primeira_ocorrencia(self):
@@ -118,6 +146,25 @@ class QuestionFilenameTests(unittest.TestCase):
         seen = Counter()
         question_filename(1, seen)
         self.assertEqual(question_filename(1, seen), "questao_001_2.png")
+
+    def test_duplicatas_em_questoes_1_a_5_ficam_diferenciadas(self):
+        seen = Counter()
+        names = [question_filename(n, seen) for n in [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]]
+        self.assertEqual(
+            names,
+            [
+                "questao_001.png",
+                "questao_001_2.png",
+                "questao_002.png",
+                "questao_002_2.png",
+                "questao_003.png",
+                "questao_003_2.png",
+                "questao_004.png",
+                "questao_004_2.png",
+                "questao_005.png",
+                "questao_005_2.png",
+            ],
+        )
 
     def test_numeros_diferentes_sem_sufixo(self):
         seen = Counter()
