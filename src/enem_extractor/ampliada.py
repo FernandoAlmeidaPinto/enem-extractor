@@ -60,10 +60,26 @@ def find_question_headings(page):
     return headings
 
 
-def compute_question_boxes(headings, page_width, page_height):
+def find_last_alternative_bottom(page, clip):
+    """Busca a última alternativa "E" dentro do recorte e usa a sua base como
+    limite inferior do bloco, com um padding extra para evitar a faixa em branco
+    final."""
+    if page is None:
+        return clip[3]
+
+    alternatives = page.search_for("E", quads=False, clip=clip)
+    if not alternatives:
+        return clip[3]
+
+    last_alternative = max(alternatives, key=lambda rect: rect.y1)
+    return last_alternative.y1 + 10
+
+
+def compute_question_boxes(headings, page_width, page_height, page=None):
     """Segmenta a página: recorta cada questão do seu heading até o próximo (ou a
-    base da página, se for o último). Retorna [(numero, (left, top, right,
-    bottom))] ordenado de cima para baixo."""
+    base da página, se for o último). Quando a página é fornecida, usa a última
+    alternativa "E" para limitar o recorte final da questão e evitar faixa em
+    branco ao fim da página."""
     ordered = sorted(headings, key=lambda heading: heading[1])
     left = SIDE_MARGIN
     right = page_width - SIDE_MARGIN
@@ -75,6 +91,12 @@ def compute_question_boxes(headings, page_width, page_height):
             bottom = ordered[pos + 1][1]  # topo do próximo heading
         else:
             bottom = page_height - FOOTER_MARGIN
+            if page is not None:
+                bottom = min(
+                    bottom,
+                    find_last_alternative_bottom(page, (left, top, right, bottom)),
+                )
+
         boxes.append((number, (left, top, right, bottom)))
     return boxes
 
@@ -101,7 +123,12 @@ def extract_questions_ampliada(path, output):
         headings = find_question_headings(page)
         if not headings:
             continue
-        boxes = compute_question_boxes(headings, page.rect.width, page.rect.height)
+        boxes = compute_question_boxes(
+            headings,
+            page.rect.width,
+            page.rect.height,
+            page=page,
+        )
         for number, box in boxes:
             render_question_image(box, page, output, question_filename(number, seen))
 
