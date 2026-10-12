@@ -1,0 +1,16 @@
+version: "3.7"
+
+services:
+  enem:
+    build: .
+    command: ["python", "-m", "enem_extractor.main"]
+    environment:
+      PYTHONPATH: /app/src
+    networks:
+      default: null
+    volumes:
+      - type: bind
+        source: /home/cleytonbiffe/Desktop/VNF_Novidades/BQ/enem-extractor
+        target: /app
+        bind:
+          create_host_path: true

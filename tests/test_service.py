@@ -74,9 +74,10 @@ class ExtractRoutingTests(unittest.TestCase):
     def test_roteia_normal_e_retorna_metadados(self):
         calls = {}
 
-        def fake(pdf_path, output_dir):
+        def fake(pdf_path, output_dir, cut_number=False):
             calls["pdf"] = pdf_path
             calls["out"] = str(output_dir)
+            calls["cut_number"] = cut_number
             (Path(output_dir) / "questao_001.png").write_bytes(b"x")
 
         with tempfile.TemporaryDirectory() as d:
@@ -94,11 +95,30 @@ class ExtractRoutingTests(unittest.TestCase):
         self.assertEqual(res["output_dir"], str(out))
         self.assertEqual(res["images"], [str(out / "questao_001.png")])
         self.assertEqual(calls["pdf"], str(pdf))
+        self.assertFalse(calls["cut_number"])
+
+    def test_repassa_cut_number_ao_extractor(self):
+        calls = {}
+
+        def fake(pdf_path, output_dir, cut_number=False):
+            calls["cut_number"] = cut_number
+
+        with tempfile.TemporaryDirectory() as d:
+            pdf = Path(d) / "2023_PV_impresso_D1_CD4.pdf"
+            pdf.write_bytes(b"%PDF-1.4")
+            original = service._EXTRACTORS["normal"]
+            service._EXTRACTORS["normal"] = fake
+            try:
+                service.extract(str(pdf), output_dir=str(Path(d) / "o"), cut_number=True)
+            finally:
+                service._EXTRACTORS["normal"] = original
+
+        self.assertTrue(calls["cut_number"])
 
     def test_auto_detecta_ampliada(self):
         seen = {}
 
-        def fake(pdf_path, output_dir):
+        def fake(pdf_path, output_dir, cut_number=False):
             seen["called"] = True
 
         with tempfile.TemporaryDirectory() as d:
@@ -118,7 +138,7 @@ class ExtractRoutingTests(unittest.TestCase):
     def test_forca_modo_normal(self):
         seen = {}
 
-        def fake(pdf_path, output_dir):
+        def fake(pdf_path, output_dir, cut_number=False):
             seen["called"] = True
 
         with tempfile.TemporaryDirectory() as d:

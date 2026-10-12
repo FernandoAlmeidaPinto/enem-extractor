@@ -7,7 +7,8 @@ na nomenclatura do fitz.
 A prova ampliada usa o título "Questão NN" (mista), com uma ou mais questões por
 página e um texto-base compartilhado em páginas separadas. Cada questão é
 recortada do seu heading até o próximo heading da página (ou a base da página, se
-for o último). PyMuPDF/Pillow são importados de forma lazy para que a lógica pura
+for o último). Com `cut_number`, o recorte começa logo abaixo do heading, sem o
+"Questão NN". PyMuPDF/Pillow são importados de forma lazy para que a lógica pura
 de segmentação seja testável sem essas libs.
 """
 
@@ -19,6 +20,9 @@ from pathlib import Path
 
 # Recuo acima do heading "Questão NN" ao definir o topo do recorte (pontos PDF).
 HEADING_TOP_PADDING = 5
+# Com `cut_number`: distância abaixo da base do heading onde o recorte começa —
+# folga para não sobrar traço do "Questão NN" sem encostar no texto da questão.
+HEADING_BOTTOM_MARGIN = 1
 # Margem removida da base da página na última questão (evita o rodapé).
 FOOTER_MARGIN = 30
 # Margem lateral do recorte (coluna única).
@@ -29,9 +33,11 @@ ZOOM = 2
 # "Questão" — evita casar "Questão" com um número de outro bloco da página.
 SAME_LINE_TOLERANCE = 3
 
-# Um heading é a palavra "Questão" seguida do número da questão (2–3 dígitos).
+# Um heading é a palavra "Questão" seguida do número da questão (1–3 dígitos).
+# Isso cobre as duplicatas de 1–5 em inglês/espanhol, que aparecem em ambas as
+# versões do exame com o mesmo número de questão.
 _QUESTION_WORD_FORMS = ("questão", "questao")
-_NUMBER_RE = re.compile(r"^\d{2,3}$")
+_NUMBER_RE = re.compile(r"^\d{1,3}$")
 
 
 def _is_question_word(text):
@@ -42,7 +48,8 @@ def _is_question_word(text):
 def find_question_headings(page):
     """Localiza os headings "Questão NN" da página via get_text("words").
 
-    Retorna [(numero:int, top_y:float)] — o y0 da palavra "Questão". Ignora
+    Retorna [(numero:int, top_y:float, bottom_y:float)] — o y0 da palavra
+    "Questão" e a base (y1) da linha do heading. Ignora
     ocorrências de "Questão" não seguidas de número (ex.: no corpo do texto), o
     plural "Questões", e casos em que o número seguinte está em outra linha
     (outro bloco da página) — exige mesma linha dentro de SAME_LINE_TOLERANCE."""
@@ -54,25 +61,52 @@ def find_question_headings(page):
             next_word = words[idx + 1]
             same_line = abs(next_word[1] - word[1]) <= SAME_LINE_TOLERANCE
             if same_line and _NUMBER_RE.match(next_word[4]):
-                headings.append((int(next_word[4]), word[1]))
+                bottom_y = max(word[3], next_word[3])
+                headings.append((int(next_word[4]), word[1], bottom_y))
     return headings
 
 
-def compute_question_boxes(headings, page_width, page_height):
+def find_last_alternative_bottom(page, clip):
+    """Busca a última alternativa "E" dentro do recorte e usa a sua base como
+    limite inferior do bloco, com um padding extra para evitar a faixa em branco
+    final."""
+    if page is None:
+        return clip[3]
+
+    alternatives = page.search_for("E", quads=False, clip=clip)
+    if not alternatives:
+        return clip[3]
+
+    last_alternative = max(alternatives, key=lambda rect: rect.y1)
+    return last_alternative.y1 + 10
+
+
+def compute_question_boxes(headings, page_width, page_height, page=None, cut_number=False):
     """Segmenta a página: recorta cada questão do seu heading até o próximo (ou a
-    base da página, se for o último). Retorna [(numero, (left, top, right,
-    bottom))] ordenado de cima para baixo."""
+    base da página, se for o último). Quando a página é fornecida, usa a última
+    alternativa "E" para limitar o recorte final da questão e evitar faixa em
+    branco ao fim da página. Com `cut_number`, o topo fica HEADING_BOTTOM_MARGIN
+    abaixo da base do heading, removendo o "Questão NN" da imagem."""
     ordered = sorted(headings, key=lambda heading: heading[1])
     left = SIDE_MARGIN
     right = page_width - SIDE_MARGIN
 
     boxes = []
-    for pos, (number, top_y) in enumerate(ordered):
-        top = top_y - HEADING_TOP_PADDING
+    for pos, (number, top_y, bottom_y) in enumerate(ordered):
+        if cut_number:
+            top = bottom_y + HEADING_BOTTOM_MARGIN
+        else:
+            top = top_y - HEADING_TOP_PADDING
         if pos + 1 < len(ordered):
             bottom = ordered[pos + 1][1]  # topo do próximo heading
         else:
             bottom = page_height - FOOTER_MARGIN
+            if page is not None:
+                bottom = min(
+                    bottom,
+                    find_last_alternative_bottom(page, (left, top, right, bottom)),
+                )
+
         boxes.append((number, (left, top, right, bottom)))
     return boxes
 
@@ -85,7 +119,7 @@ def question_filename(number, seen):
     return f"questao_{number:03}{suffix}.png"
 
 
-def extract_questions_ampliada(path, output):
+def extract_questions_ampliada(path, output, cut_number=False):
     import fitz  # PyMuPDF (lazy)
 
     print(f"Opening PDF {path}")
@@ -99,7 +133,13 @@ def extract_questions_ampliada(path, output):
         headings = find_question_headings(page)
         if not headings:
             continue
-        boxes = compute_question_boxes(headings, page.rect.width, page.rect.height)
+        boxes = compute_question_boxes(
+            headings,
+            page.rect.width,
+            page.rect.height,
+            page=page,
+            cut_number=cut_number,
+        )
         for number, box in boxes:
             render_question_image(box, page, output, question_filename(number, seen))
 

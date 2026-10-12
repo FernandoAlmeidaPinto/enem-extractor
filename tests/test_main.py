@@ -40,7 +40,7 @@ class MainModeArgTests(unittest.TestCase):
         """--mode ampliada forces mode="ampliada" for every PDF."""
         recorded = []
 
-        def fake_extract(pdf_path, output_dir=None, mode="auto"):
+        def fake_extract(pdf_path, output_dir=None, mode="auto", cut_number=False):
             recorded.append({"pdf": pdf_path, "mode": mode})
             return {
                 "pdf": pdf_path,
@@ -63,7 +63,7 @@ class MainModeArgTests(unittest.TestCase):
         """--mode normal forces mode="normal" for every PDF."""
         recorded = []
 
-        def fake_extract(pdf_path, output_dir=None, mode="auto"):
+        def fake_extract(pdf_path, output_dir=None, mode="auto", cut_number=False):
             recorded.append({"pdf": pdf_path, "mode": mode})
             return {
                 "pdf": pdf_path,
@@ -85,7 +85,7 @@ class MainModeArgTests(unittest.TestCase):
         """No --mode argument defaults to mode="auto"."""
         recorded = []
 
-        def fake_extract(pdf_path, output_dir=None, mode="auto"):
+        def fake_extract(pdf_path, output_dir=None, mode="auto", cut_number=False):
             recorded.append({"pdf": pdf_path, "mode": mode})
             return {
                 "pdf": pdf_path,
@@ -114,7 +114,7 @@ class MainModeArgTests(unittest.TestCase):
         """An empty provas/ dir results in zero extract calls (no crash)."""
         recorded = []
 
-        def fake_extract(pdf_path, output_dir=None, mode="auto"):
+        def fake_extract(pdf_path, output_dir=None, mode="auto", cut_number=False):
             recorded.append(pdf_path)
             return {
                 "pdf": pdf_path,
@@ -126,6 +126,19 @@ class MainModeArgTests(unittest.TestCase):
         self._run_in_provas_dir([], [], fake_extract)
 
         self.assertEqual(recorded, [])
+
+    def test_sem_numero_passa_cut_number(self):
+        """--sem-numero ativa cut_number; sem a flag fica False."""
+        recorded = []
+
+        def fake_extract(pdf_path, output_dir=None, mode="auto", cut_number=False):
+            recorded.append(cut_number)
+            return {"pdf": pdf_path, "output_dir": "/tmp/out", "mode": mode, "images": []}
+
+        self._run_in_provas_dir(["--sem-numero"], ["prova_D1.pdf"], fake_extract)
+        self._run_in_provas_dir([], ["prova_D1.pdf"], fake_extract)
+
+        self.assertEqual(recorded, [True, False])
 
 
 if __name__ == "__main__":

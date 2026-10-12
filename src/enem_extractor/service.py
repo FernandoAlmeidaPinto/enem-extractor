@@ -30,28 +30,29 @@ def default_output_dir(pdf_path) -> Path:
     return Path("imagens") / year / day
 
 
-def _run_normal(pdf_path, output_dir):
+def _run_normal(pdf_path, output_dir, cut_number=False):
     from .normal import extract_questions_normal
 
-    extract_questions_normal(pdf_path, str(output_dir))
+    extract_questions_normal(pdf_path, str(output_dir), cut_number=cut_number)
 
 
-def _run_ampliada(pdf_path, output_dir):
+def _run_ampliada(pdf_path, output_dir, cut_number=False):
     from .ampliada import extract_questions_ampliada
 
-    extract_questions_ampliada(pdf_path, str(output_dir))
+    extract_questions_ampliada(pdf_path, str(output_dir), cut_number=cut_number)
 
 
 _EXTRACTORS = {"normal": _run_normal, "ampliada": _run_ampliada}
 
 
-def extract(pdf_path, output_dir=None, mode="auto") -> dict:
+def extract(pdf_path, output_dir=None, mode="auto", cut_number=False) -> dict:
     """Ponto de entrada único.
 
     - valida `mode` e a existência do PDF
     - resolve o modo (detecta pelo nome se 'auto', senão usa o forçado)
     - resolve a pasta de saída (imagens/<ano>/<dia> se `output_dir` é None)
-    - roteia para o extractor correto
+    - roteia para o extractor correto (`cut_number` remove o "Questão NN" do
+      topo de cada imagem)
     - retorna metadados do job
 
     Nota: `images` lista todos os PNGs em `output_dir` após a extração; se a
@@ -70,7 +71,7 @@ def extract(pdf_path, output_dir=None, mode="auto") -> dict:
     out = Path(output_dir) if output_dir is not None else default_output_dir(pdf_path)
     out.mkdir(parents=True, exist_ok=True)
 
-    _EXTRACTORS[resolved_mode](str(pdf), out)
+    _EXTRACTORS[resolved_mode](str(pdf), out, cut_number=cut_number)
 
     images = sorted(str(p) for p in out.glob("*.png"))
     return {
