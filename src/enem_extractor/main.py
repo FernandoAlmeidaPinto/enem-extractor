@@ -14,12 +14,17 @@ def main(argv=None):
         default="auto",
         help="Modo de extração (padrão: auto).",
     )
+    parser.add_argument(
+        "--sem-numero",
+        action="store_true",
+        help='Recorta logo abaixo do título "Questão NN", removendo-o das imagens.',
+    )
     args = parser.parse_args(argv)
 
     provas_dir = Path("provas")
 
     for pdf_file in sorted(provas_dir.glob("*.pdf")):
-        result = extract(str(pdf_file), mode=args.mode)
+        result = extract(str(pdf_file), mode=args.mode, cut_number=args.sem_numero)
         print(
             f"Processado: {result['pdf']} -> {result['output_dir']} "
             f"(modo={result['mode']}, {len(result['images'])} imagens)"

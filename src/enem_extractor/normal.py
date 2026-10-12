@@ -12,6 +12,9 @@ from PIL import Image
 
 # Recuo aplicado às bordas esquerda e superior do recorte (em pontos PDF).
 EDGE_PADDING = 5
+# Com `cut_number`: distância abaixo da base do "QUESTÃO NN" onde o recorte
+# começa — folga para não sobrar traço do heading sem encostar no texto.
+HEADING_BOTTOM_MARGIN = 1
 # Margem removida da borda direita da página ao recortar.
 RIGHT_MARGIN = 30
 # Espaço extra abaixo da última alternativa "E".
@@ -24,7 +27,7 @@ D2_QUESTION_OFFSET = 90
 ZOOM = 2
 
 
-def extract_questions_normal(path, output):
+def extract_questions_normal(path, output, cut_number=False):
     print(f"Opening PDF {path}")
     pdf_document = fitz.open(path)
 
@@ -40,7 +43,7 @@ def extract_questions_normal(path, output):
         if len(questions) == 0:
             continue
         question_count += len(questions)
-        crop_questions_on_page(questions, column_divider_x, page, output)
+        crop_questions_on_page(questions, column_divider_x, page, output, cut_number)
 
 
 def find_questions_on_page(initial_num, page):
@@ -83,7 +86,7 @@ def find_last_alternative_bottom(page, clip):
     return last_alternative.y1 + BOTTOM_PADDING
 
 
-def crop_questions_on_page(questions, column_divider_x, page, output):
+def crop_questions_on_page(questions, column_divider_x, page, output, cut_number=False):
     page_bottom = page.rect.y1
     page_right = page.rect.x1
     keys = list(questions.keys())
@@ -95,7 +98,11 @@ def crop_questions_on_page(questions, column_divider_x, page, output):
         current_rect = questions[key]
 
         left = current_rect.x0 - EDGE_PADDING
-        top = current_rect.y0 - EDGE_PADDING
+        if cut_number:
+            # Começa logo abaixo do "QUESTÃO NN", removendo-o da imagem.
+            top = current_rect.y1 + HEADING_BOTTOM_MARGIN
+        else:
+            top = current_rect.y0 - EDGE_PADDING
         right = page_right - RIGHT_MARGIN
         bottom = page_bottom
 

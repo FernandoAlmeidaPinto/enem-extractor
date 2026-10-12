@@ -11,6 +11,7 @@ from collections import Counter
 
 from enem_extractor.ampliada import (
     FOOTER_MARGIN,
+    HEADING_BOTTOM_MARGIN,
     HEADING_TOP_PADDING,
     SIDE_MARGIN,
     compute_question_boxes,
@@ -57,7 +58,7 @@ def _word(text, x0=0.0, y0=0.0):
 class FindQuestionHeadingsTests(unittest.TestCase):
     def test_detecta_questao_seguida_de_numero(self):
         page = FakePage([_word("Questão", y0=100), _word("06", x0=60, y0=100)])
-        self.assertEqual(find_question_headings(page), [(6, 100.0)])
+        self.assertEqual(find_question_headings(page), [(6, 100.0, 112.0)])
 
     def test_multiplos_headings_na_pagina(self):
         page = FakePage(
@@ -69,7 +70,7 @@ class FindQuestionHeadingsTests(unittest.TestCase):
                 _word("07", x0=60, y0=300),
             ]
         )
-        self.assertEqual(find_question_headings(page), [(6, 100.0), (7, 300.0)])
+        self.assertEqual(find_question_headings(page), [(6, 100.0, 112.0), (7, 300.0, 312.0)])
 
     def test_ignora_questao_sem_numero(self):
         page = FakePage([_word("Questão", y0=100), _word("anterior", y0=100)])
@@ -81,17 +82,22 @@ class FindQuestionHeadingsTests(unittest.TestCase):
 
     def test_aceita_sem_acento(self):
         page = FakePage([_word("Questao", y0=100), _word("06", y0=100)])
-        self.assertEqual(find_question_headings(page), [(6, 100.0)])
+        self.assertEqual(find_question_headings(page), [(6, 100.0, 112.0)])
 
     def test_aceita_numero_com_1_digito(self):
         page = FakePage([_word("Questão", y0=100), _word("5", y0=100)])
-        self.assertEqual(find_question_headings(page), [(5, 100.0)])
+        self.assertEqual(find_question_headings(page), [(5, 100.0, 112.0)])
 
     def test_aceita_acento_decomposto_nfd(self):
         # "Questão" na forma decomposta (NFD: a + U+0303) deve casar apos normalizar.
         nfd = unicodedata.normalize("NFD", "Questão")
         page = FakePage([_word(nfd, y0=100), _word("06", y0=100)])
-        self.assertEqual(find_question_headings(page), [(6, 100.0)])
+        self.assertEqual(find_question_headings(page), [(6, 100.0, 112.0)])
+
+    def test_bottom_y_e_a_base_mais_baixa_da_linha(self):
+        numero = (60.0, 100.0, 70.0, 115.0, "06", 0, 0, 1)
+        page = FakePage([_word("Questão", y0=100), numero])
+        self.assertEqual(find_question_headings(page), [(6, 100.0, 115.0)])
 
     def test_ignora_numero_em_outra_linha(self):
         # Numero logo apos "Questão" na lista de words, mas em outra linha
@@ -102,14 +108,14 @@ class FindQuestionHeadingsTests(unittest.TestCase):
 
 class ComputeQuestionBoxesTests(unittest.TestCase):
     def test_entre_headings_consecutivos(self):
-        boxes = compute_question_boxes([(6, 100.0), (7, 300.0)], 800, 1000)
+        boxes = compute_question_boxes([(6, 100.0, 112.0), (7, 300.0, 312.0)], 800, 1000)
         self.assertEqual(
             boxes[0],
             (6, (SIDE_MARGIN, 100.0 - HEADING_TOP_PADDING, 800 - SIDE_MARGIN, 300.0)),
         )
 
     def test_ultima_questao_vai_ate_base_menos_rodape(self):
-        boxes = compute_question_boxes([(6, 100.0), (7, 300.0)], 800, 1000)
+        boxes = compute_question_boxes([(6, 100.0, 112.0), (7, 300.0, 312.0)], 800, 1000)
         self.assertEqual(
             boxes[1],
             (
@@ -124,18 +130,31 @@ class ComputeQuestionBoxesTests(unittest.TestCase):
         )
 
     def test_ordena_por_posicao_vertical(self):
-        boxes = compute_question_boxes([(7, 300.0), (6, 100.0)], 800, 1000)
+        boxes = compute_question_boxes([(7, 300.0, 312.0), (6, 100.0, 112.0)], 800, 1000)
         self.assertEqual([b[0] for b in boxes], [6, 7])
 
     def test_heading_unico_vai_ate_base(self):
-        boxes = compute_question_boxes([(6, 100.0)], 800, 1000)
+        boxes = compute_question_boxes([(6, 100.0, 112.0)], 800, 1000)
         self.assertEqual(len(boxes), 1)
         self.assertEqual(boxes[0][1][3], 1000 - FOOTER_MARGIN)
 
     def test_ultima_alternativa_e_limita_o_recorte(self):
         page = FakePageWithAlternatives()
-        boxes = compute_question_boxes([(6, 100.0), (7, 300.0)], 800, 1000, page=page)
+        boxes = compute_question_boxes([(6, 100.0, 112.0), (7, 300.0, 312.0)], 800, 1000, page=page)
         self.assertEqual(boxes[1][1][3], 350.0 + 10)
+
+    def test_cut_number_comeca_abaixo_do_heading(self):
+        boxes = compute_question_boxes(
+            [(6, 100.0, 112.0), (7, 300.0, 312.0)], 800, 1000, cut_number=True
+        )
+        self.assertEqual(boxes[0][1][1], 112.0 + HEADING_BOTTOM_MARGIN)
+        self.assertEqual(boxes[1][1][1], 312.0 + HEADING_BOTTOM_MARGIN)
+
+    def test_cut_number_mantem_base_no_topo_do_proximo_heading(self):
+        boxes = compute_question_boxes(
+            [(6, 100.0, 112.0), (7, 300.0, 312.0)], 800, 1000, cut_number=True
+        )
+        self.assertEqual(boxes[0][1][3], 300.0)
 
 
 class QuestionFilenameTests(unittest.TestCase):

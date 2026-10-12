@@ -57,15 +57,18 @@ def list_provas_tool() -> list[dict]:
     return catalog.list_provas()
 
 
-def extract_prova_tool(name: str, mode: str = "auto", output_dir: str | None = None) -> dict:
+def extract_prova_tool(
+    name: str, mode: str = "auto", output_dir: str | None = None, cut_number: bool = False
+) -> dict:
     """Extrai as questões de uma prova.
 
     `name`: arquivo listado (com ou sem `.pdf`) ou um caminho.
     `mode`: 'auto' (detecta pelo nome) | 'normal' | 'ampliada'.
+    `cut_number`: se True, remove o título "Questão NN" do topo das imagens.
     Retorna {pdf, mode, output_dir, images}.
     """
     pdf = catalog.resolve_prova(name)
-    return service.extract(str(pdf), output_dir=output_dir, mode=mode)
+    return service.extract(str(pdf), output_dir=output_dir, mode=mode, cut_number=cut_number)
 
 
 def build_server() -> MCPServer:
